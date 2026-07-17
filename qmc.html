@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quine-McCluskey & Primimplikantentafel Explorer</title>
+<!-- KaTeX für professionelle LaTeX-Formeldarstellung -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+<style>
+  :root {
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --ink: #1e293b;
+    --muted: #64748b;
+    --line: #cbd5e1;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --green: #16a34a;
+    --amber: #d97706;
+    --purple: #7048e8;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    z-index: 10;
+    flex: none;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+  header .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  header .right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  
+  .ctrl-group { display: flex; align-items: center; gap: 6px; }
+  .ctrl-group label { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+  .hdr-select {
+    font: 12.5px "Segoe UI", sans-serif;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .hdr-select:focus { border-color: var(--accent); outline: none; }
+  
+  .hdr-btn {
+    font: 12.5px "Segoe UI", sans-serif;
+    font-weight: 600;
+    padding: 6px 12px;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #dc2626;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .hdr-btn:hover { background: #fee2e2; border-color: #dc2626; }
+
+  .wrap { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
+  aside { width: 380px; flex: none; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .card h2 { font-size: 14.5px; margin: 0 0 10px 0; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: space-between; }
+  .card-subhint { font-size: 12px; color: var(--muted); margin-top: -6px; margin-bottom: 12px; line-height: 1.4; }
+  
+  /* Tabs im linken Card */
+  .seg { display: flex; background: #f1f5f9; padding: 3px; border-radius: 9px; gap: 2px; margin-bottom: 12px; }
+  .seg button {
+    flex: 1; border: none; background: transparent; padding: 6px 4px;
+    border-radius: 7px; font: 12px "Segoe UI", sans-serif; font-weight: 600;
+    color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .seg button.active { background: #fff; color: var(--ink); font-weight: 650; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .tabpage { display: none; margin-top: 10px; }
+  .tabpage.active { display: block; }
+
+  .ops { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .ops button {
+    min-width: 32px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px;
+    background: #f8fafc; font: 14px Georgia, serif; cursor: pointer; color: var(--ink);
+  }
+  .ops button:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--accent); }
+
+  textarea, input[type=text] {
+    width: 100%; font: 13.5px Consolas, monospace; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 8px; resize: vertical; color: var(--ink);
+    background: #fff; transition: border-color 0.15s;
+  }
+  textarea:focus, input[type=text]:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .row label { font-size: 12.5px; font-weight: 600; width: 135px; flex: none; }
+  .row input { flex: 1; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-primary {
+    flex: 1; padding: 9px 14px; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; font-weight: 650; font-size: 13px; cursor: pointer;
+    transition: background 0.15s; text-align: center;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary {
+    padding: 9px 12px; background: #f1f5f9; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: #e2e8f0; }
+
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+
+  .status {
+    padding: 9px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; margin-top: 10px; line-height: 1.4;
+  }
+  .status.ok { background: #f0fdf4; color: var(--green); border: 1px solid #bbf7d0; }
+  .status.bad { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .status.muted { background: #f8fafc; color: var(--muted); border: 1px solid var(--line); }
+
+  /* Minterm & PI Listen im linken Card */
+  .pi-item {
+    padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc;
+    margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-size: 13px; transition: all 0.15s; cursor: pointer;
+  }
+  .pi-item:hover { border-color: var(--accent); background: #eff6ff; }
+  .pi-item.essential { border-color: #fde68a; background: #fffbeb; }
+  .pi-badge {
+    font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px;
+    background: #e2e8f0; color: #334155; flex: none;
+  }
+  .pi-badge.ess { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+  /* Hauptbereich (Rechts) */
+  .main {
+    flex: 1; display: flex; flex-direction: column; background: var(--card-bg);
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    min-width: 0;
+  }
+  .main-header {
+    padding: 12px 20px; border-bottom: 1px solid var(--line); background: #f8fafc;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .main-tabs { display: flex; gap: 8px; }
+  .main-tab-btn {
+    padding: 7px 14px; border: 1px solid transparent; border-radius: 8px; font: 13px "Segoe UI", sans-serif;
+    font-weight: 650; color: var(--muted); background: transparent; cursor: pointer; transition: all 0.15s;
+  }
+  .main-tab-btn.active { background: #fff; border-color: var(--line); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .main-tab-btn:hover:not(.active) { background: #e2e8f0; color: var(--ink); }
+
+  .formula-box {
+    font-size: 15px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;
+  }
+  .formula-box .lbl { color: var(--muted); font-size: 13px; }
+
+  .content-area { flex: 1; overflow: auto; padding: 20px; }
+
+  /* Primimplikantentafel (PI Table) */
+  .pitable-container { overflow: auto; max-height: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  table.pi-table {
+    border-collapse: collapse; width: 100%; text-align: center; font-size: 13.5px;
+  }
+  table.pi-table th, table.pi-table td {
+    padding: 10px 12px; border: 1px solid #e2e8f0;
+  }
+  table.pi-table thead th {
+    background: #f1f5f9; color: #1e293b; font-weight: 700; position: sticky; top: 0; z-index: 5;
+  }
+  table.pi-table thead th.ess-col { background: #fef3c7; color: #92400e; border-bottom: 2px solid #f59e0b; }
+  table.pi-table tbody th {
+    background: #f8fafc; font-weight: 600; text-align: left; position: sticky; left: 0; z-index: 4;
+  }
+  table.pi-table tbody tr:hover td, table.pi-table tbody tr:hover th { background: #f0f9ff; }
+  table.pi-table tbody tr.ess-row th { background: #fffbeb; border-left: 4px solid #f59e0b; }
+  table.pi-table tbody tr.ess-row td { background: #fffbeb; }
+  table.pi-table td.cov-cell { font-weight: 800; color: var(--accent); font-size: 16px; cursor: pointer; }
+  table.pi-table td.cov-cell.ess-mark { color: #d97706; }
+
+  /* Verschmelzungstabellen (Stages • Slideshow & Side-by-Side) */
+  .stages-container { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 12px; }
+  .stages-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; background: #f1f5f9; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+  .stages-nav button {
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    font: 12.5px "Segoe UI", sans-serif; font-weight: 600; color: var(--ink); cursor: pointer; transition: all 0.15s;
+  }
+  .stages-nav button.active, .stages-nav button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  
+  .stages-grid {
+    flex: 1; display: flex; gap: 16px; align-items: stretch; overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 12px; scroll-behavior: smooth; min-height: 0;
+  }
+  .stage-box {
+    min-width: 320px; width: 340px; flex: none; display: flex; flex-direction: column;
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03); max-height: 100%;
+  }
+  .stage-header {
+    background: #f1f5f9; padding: 10px 14px; font-weight: 700; font-size: 13.5px; color: #0f172a;
+    border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex: none;
+  }
+  .stage-content { flex: 1; overflow-y: auto; }
+  table.stage-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.stage-table td, table.stage-table th { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+  table.stage-table tr:hover { background: #f8fafc; }
+  table.stage-table .group-row td { background: #f8fafc; font-weight: 700; color: #475569; font-size: 12px; border-top: 1px solid #e2e8f0; }
+  .mark-pi { font-weight: 700; color: var(--green); background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  .mark-cov { color: #94a3b8; font-weight: 700; font-size: 14px; }
+
+  /* Footer bar inside main */
+  .footerbar {
+    padding: 10px 20px; border-top: 1px solid var(--line); background: #f8fafc; font-size: 12.5px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center; flex: none;
+  }
+  
+  .math-fallback { font-family: "Latin Modern Math", Consolas, monospace; font-style: italic; }
+  .math-fallback .ov { text-decoration: overline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Quine-McCluskey & Primimplikantentafel Explorer</h1>
+    <div class="sub">Schritt-für-Schritt Minterm-Verschmelzung, Überdeckungstabelle & Kern-Primimplikanten-Bestimmung</div>
+  </div>
+  <div class="right">
+    <div class="ctrl-group">
+      <label for="targetFormSelect">Form:</label>
+      <select id="targetFormSelect" class="hdr-select">
+        <option value="dnf" selected>DNF (1-Gruppen • Disjunktive Form)</option>
+        <option value="knf">KNF (0-Gruppen • Konjunktive Form)</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label for="nvars">Variablen (n):</label>
+      <select id="nvars" class="hdr-select">
+        <option value="2">2 (a, b / x₁, x₀)</option>
+        <option value="3">3 (a, b, c / x₂..x₀)</option>
+        <option value="4" selected>4 (a..d / x₃..x₀)</option>
+        <option value="5">5 (a..e / x₄..x₀)</option>
+        <option value="6">6 (x₅..x₀)</option>
+      </select>
+    </div>
+    <select id="examples" class="hdr-select">
+      <option value="">Beispiel laden…</option>
+      <option value="slide">Vorlesungsbeispiel (4 Var. • 5 Minterme)</option>
+      <option value="petrick">Zyklische Überdeckung / Petrick-Verfahren (4 Var.)</option>
+      <option value="bcd">BCD ≥ 5 mit Don’t-Cares (4 Var.)</option>
+      <option value="maj">Mehrheit von drei (3 Var.)</option>
+      <option value="adder">Volladdierer Übertrag Cout (3 Var.)</option>
+      <option value="parity4">Parität XOR (4 Var.)</option>
+    </select>
+    <div class="ctrl-group" style="background:#fff; padding:5px 12px; border-radius:8px; border:1px solid var(--line); display:flex; gap:14px; align-items:center; height:31px;">
+      <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600; font-size:12.5px; color:#1e293b; margin:0;" title="Primimplikanten (PIs) in den Stufen und in Card 2 aufdecken">
+        <input type="checkbox" id="showPIsChk" style="cursor:pointer; width:14px; height:14px; margin:0;">
+        <span>Primimplikanten (PIs)</span>
+      </label>
+      <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600; font-size:12.5px; color:#1e293b; margin:0;" title="Kern-PIs in Tabelle/Card 3 und Minimallösung f aufdecken">
+        <input type="checkbox" id="showSolutionChk" style="cursor:pointer; width:14px; height:14px; margin:0;">
+        <span>Kern-PIs & Lösung f</span>
+      </label>
+    </div>
+    <button id="clearBtn" class="hdr-btn" title="Alle Eingaben zurücksetzen" style="height:31px; display:flex; align-items:center;">Leeren</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="left">
+    <!-- 1. EINGABE CARD -->
+    <div class="card" id="cardInput">
+      <h2>1. Funktionsdefinition & Eingabe</h2>
+      <div class="seg" id="tabs">
+        <button data-tab="mt" class="active">Minterme & d</button>
+        <button data-tab="expr">Ausdruck</button>
+        <button data-tab="sop">SOP / Produkt</button>
+      </div>
+
+      <!-- Tab: Minterme & Don't Cares -->
+      <div class="tabpage active" id="tab-mt">
+        <div class="row">
+          <label title="Werte für die f = 1 ist">Minterme (f = 1)</label>
+          <input type="text" id="mintermInput" value="0, 4, 5, 6, 7, 8, 9, 13" placeholder="z. B. 0, 4, 5, 6, 7">
+        </div>
+        <div class="row">
+          <label title="Don't-Care Indizes (beliebig 0 oder 1)">Don’t-Cares (−)</label>
+          <input type="text" id="dcInput" placeholder="z. B. 10, 11, 12">
+        </div>
+        <div class="btn-row">
+          <button id="applyMt" class="btn-primary">Berechnen</button>
+        </div>
+      </div>
+
+      <!-- Tab: Boolescher Ausdruck -->
+      <div class="tabpage" id="tab-expr">
+        <div class="ops" id="ops"></div>
+        <textarea id="exprInput" rows="3" spellcheck="false" placeholder="(a ∧ b) ∨ (¬c ∧ d)"></textarea>
+      </div>
+
+      <!-- Tab: SOP -->
+      <div class="tabpage" id="tab-sop">
+        <textarea id="sopInput" rows="3" spellcheck="false" placeholder="x3 x2 ¬x1 x0&#10;x3 ¬x2 x0"></textarea>
+      </div>
+
+      <div class="status muted" id="status" style="margin-top:6px;">Bereit</div>
+    </div>
+
+    <!-- 2. GEFUNDENE PRIMIMPLIKANTEN (PIs) CARD -->
+    <div class="card" id="cardPIs">
+      <h2 style="margin-bottom:8px;">2. Primimplikanten (PIs) <span id="piCountBadge" class="pi-badge">0 PIs</span></h2>
+      <div id="piListContainer" style="max-height: 240px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- 3. KERN-PIS & MINIMALLÖSUNG CARD -->
+    <div class="card" id="cardSolution">
+      <h2 style="margin-bottom:8px;">3. Kern-PIs & Minimallösung</h2>
+      <div id="solTermsContainer" style="margin-bottom: 8px;"></div>
+      <div id="solCostBadge" style="font-size: 12px; font-weight: 650; color: #475569; margin-bottom: 6px;"></div>
+      <div id="kpiListContainer" style="max-height: 180px; overflow-y: auto;"></div>
+    </div>
+  </aside>
+
+  <!-- HAUPTBEREICH RECHTS -->
+  <div class="main">
+    <div class="main-header">
+      <div class="main-tabs">
+        <button id="tabBtnStages" class="main-tab-btn active">Minterm-Gruppierung (Stufen)</button>
+        <button id="tabBtnTable" class="main-tab-btn">Primimplikantentafel</button>
+      </div>
+      <div class="formula-box" id="capFormula">
+        <span class="lbl">f =</span> <span>—</span>
+      </div>
+    </div>
+
+    <div class="content-area" id="mainContent" style="display:flex; flex-direction:column;">
+      <!-- Minterm-Gruppierung View (Default) -->
+      <div id="viewStages" class="stages-container" style="display: flex;">
+        <div class="stages-nav" id="stagesNav"></div>
+        <div class="stages-grid" id="stagesGrid"></div>
+      </div>
+
+      <!-- Primimplikantentafel View -->
+      <div id="viewTable" style="display: none; height: 100%; flex-direction: column; gap: 14px;">
+        <div class="pitable-container" id="pitableWrap"></div>
+      </div>
+    </div>
+
+    <div class="footerbar">
+      <span><b style="color:#d97706;font-size:14px">★</b>&nbsp; Kern-PI</span>
+      <span><b style="color:#2563eb;font-size:14px">✕</b>&nbsp; Minterm überdeckt</span>
+      <span><b style="color:#16a34a;font-size:14px">✓</b>&nbsp; Kombiniert</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let activeTab = "mt";
+let activeMainTab = "stages";
+let activeStageStep = 0;
+let state = {
+  n: 4,
+  ones: [0, 4, 5, 6, 7],
+  dcs: [10, 11, 12],
+  letters: false,
+  targetForm: "dnf",
+  showPIs: false,
+  showSolution: false,
+  stages: [],
+  pis: [],
+  essentialPis: [],
+  minimalPis: [],
+  mintermsToCover: []
+};
+
+/* Operator-Toolbar für Tab Ausdruck */
+const OPS = [["¬", "NICHT (~)"], ["∧", "UND (&)"], ["∨", "ODER (|)"], ["⊕", "XOR (^)"],
+             ["→", "Implikation (->)"], ["↔", "Äquivalenz (<->)"], ["(", "Klammer auf"], [")", "Klammer zu"]];
+for(const [sym, tip] of OPS){
+  const b = document.createElement("button");
+  b.textContent = sym; b.title = tip;
+  b.onclick = () => {
+    const ta = $("exprInput"), s = ta.selectionStart, e = ta.selectionEnd;
+    const ins = /[∧∨⊕→↔]/.test(sym) ? " " + sym + " " : sym;
+    ta.value = ta.value.slice(0, s) + ins + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + ins.length;
+    ta.focus(); scheduleBuild();
+  };
+  $("ops").appendChild(b);
+}
+
+/* Tab Switching Links */
+function setTab(tab){
+  activeTab = tab;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".tabpage").forEach(p => p.classList.toggle("active", p.id === "tab-" + tab));
+  tryBuild();
+}
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+/* Tab Switching Rechts */
+$("tabBtnTable").onclick = () => {
+  activeMainTab = "table";
+  $("tabBtnTable").classList.add("active"); $("tabBtnStages").classList.remove("active");
+  $("viewTable").style.display = "flex"; $("viewStages").style.display = "none";
+};
+$("tabBtnStages").onclick = () => {
+  activeMainTab = "stages";
+  $("tabBtnStages").classList.add("active"); $("tabBtnTable").classList.remove("active");
+  $("viewStages").style.display = "block"; $("viewTable").style.display = "none";
+};
+
+/* Status Anzeige */
+function setStatus(kind, text){
+  const el = $("status");
+  el.className = "status " + kind;
+  el.textContent = text;
+}
+
+/* KaTeX Render Helper */
+function renderMath(latexStr){
+  if(window.katex){
+    try {
+      return katex.renderToString(latexStr, { throwOnError: false });
+    } catch(e) { console.warn("KaTeX error:", e); }
+  }
+  return `<span class="math-fallback">${latexStr
+    .replace(/\\overline\{([^}]+)\}/g, '<span class="ov">$1</span>')
+    .replace(/\\wedge/g, '∧').replace(/\\vee/g, '∨')
+    .replace(/\\left\(/g, '(').replace(/\\right\)/g, ')')
+    .replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
+    .replace(/\\;/g, ' ')}</span>`;
+}
+
+/* Literal Formatter */
+function impToLatex(imp, n, letters){
+  const varName = i => letters ? "abcdefg"[i] : `x_{${i}}`;
+  const lits = [];
+  for(let i = n - 1; i >= 0; i--){
+    if((imp.dc >> i) & 1) continue;
+    const v = varName(i);
+    lits.push(((imp.v >> i) & 1) ? v : `\\overline{${v}}`);
+  }
+  return lits.length ? lits.join("") : "1";
+}
+
+function knfToLatex(imp, n, letters){
+  const varName = i => letters ? "abcdefg"[i] : `x_{${i}}`;
+  const lits = [];
+  for(let i = n - 1; i >= 0; i--){
+    if((imp.dc >> i) & 1) continue;
+    const v = varName(i);
+    lits.push(((imp.v >> i) & 1) ? `\\overline{${v}}` : v);
+  }
+  if(!lits.length) return "0";
+  return lits.length > 1 ? `\\left(${lits.join(" \\vee ")}\\right)` : lits[0];
+}
+
+function binStr(v, dc, n){
+  let s = "";
+  for(let i = n - 1; i >= 0; i--){
+    if((dc >> i) & 1) s += "−";
+    else s += ((v >> i) & 1) ? "1" : "0";
+  }
+  return s;
+}
+
+function countBits(x){
+  let c = 0; while(x){ c += x & 1; x >>= 1; } return c;
+}
+
+/* ============================================================
+   QUINE-MCCLUSKEY & PETRICK ALGORITHMUS
+   ============================================================ */
+function runQMC(n, minterms, dcs){
+  const allTerms = [...new Set([...minterms, ...dcs])].sort((a,b)=>a-b);
+  const stages = [];
+  let current = new Map();
+  
+  for(const m of allTerms){
+    current.set(`${m}|0`, { v: m, dc: 0, minterms: [m], combined: false });
+  }
+
+  while(current.size > 0){
+    const items = [...current.values()];
+    // Nach Anzahl der 1en im v gruppieren
+    const groups = new Map();
+    for(const it of items){
+      const w = countBits(it.v);
+      if(!groups.has(w)) groups.set(w, []);
+      groups.get(w).push(it);
+    }
+    stages.push({ groups, items });
+
+    const next = new Map();
+    const sortedWeights = [...groups.keys()].sort((a,b)=>a-b);
+
+    for(let i = 0; i < sortedWeights.length - 1; i++){
+      const w1 = sortedWeights[i], w2 = sortedWeights[i+1];
+      if(w2 !== w1 + 1) continue;
+      const g1 = groups.get(w1), g2 = groups.get(w2);
+      for(const a of g1) for(const b of g2){
+        if(a.dc !== b.dc) continue;
+        const diff = a.v ^ b.v;
+        if(diff && (diff & (diff - 1)) === 0){
+          a.combined = true;
+          b.combined = true;
+          const v = a.v & b.v, dc = a.dc | diff;
+          const key = `${v}|${dc}`;
+          if(!next.has(key)){
+            const combMinterms = [...new Set([...a.minterms, ...b.minterms])].sort((x,y)=>x-y);
+            next.set(key, { v, dc, minterms: combMinterms, combined: false });
+          }
+        }
+      }
+    }
+    current = next;
+  }
+
+  // Alle nicht kombinierten Terme aus allen Stufen sind Primimplikanten
+  const piMap = new Map();
+  for(const st of stages){
+    for(const it of st.items){
+      if(!it.combined){
+        piMap.set(`${it.v}|${it.dc}`, it);
+      }
+    }
+  }
+  const pis = [...piMap.values()].sort((a,b) => a.v - b.v || a.dc - b.dc);
+  pis.forEach((p, idx) => p.id = `P_{${idx+1}}`);
+
+  // Überdeckungstabelle für reine Minterme (ohne dcs)
+  const mintermsToCover = [...new Set(minterms)].sort((a,b)=>a-b);
+  const essentialPis = [];
+  const coveredMinterms = new Set();
+
+  // 1. Kern-Primimplikanten ermitteln (Spalten mit genau einer Überdeckung)
+  for(const m of mintermsToCover){
+    const coveringPis = pis.filter(p => p.minterms.includes(m));
+    if(coveringPis.length === 1){
+      const epi = coveringPis[0];
+      if(!essentialPis.includes(epi)) essentialPis.push(epi);
+    }
+  }
+  for(const epi of essentialPis){
+    epi.isEssential = true;
+    epi.minterms.forEach(m => coveredMinterms.add(m));
+  }
+
+  // 2. Petrick / Rest-Überdeckung für noch nicht überdeckte Minterme
+  const remainingMinterms = mintermsToCover.filter(m => !coveredMinterms.has(m));
+  let minimalPis = [...essentialPis];
+
+  if(remainingMinterms.length > 0){
+    const remainingPis = pis.filter(p => !p.isEssential);
+    // Petrick-Verfahren (oder Brute-Force über alle Teilmengen, da n <= 7)
+    let bestSubset = null;
+    let bestCost = Infinity;
+
+    const costOf = p => countBits(~p.dc & ((1<<n)-1)); // Anzahl Literale
+
+    function search(idx, currentSubset, currentCovered){
+      if(currentCovered.size === remainingMinterms.length){
+        const totalLits = currentSubset.reduce((sum, p) => sum + costOf(p), 0);
+        const totalCost = currentSubset.length * 100 + totalLits;
+        if(totalCost < bestCost){
+          bestCost = totalCost;
+          bestSubset = [...currentSubset];
+        }
+        return;
+      }
+      if(idx >= remainingPis.length) return;
+
+      // Option A: PI mitnehmen
+      const p = remainingPis[idx];
+      const nextCovered = new Set(currentCovered);
+      let addedAny = false;
+      for(const m of p.minterms){
+        if(remainingMinterms.includes(m) && !nextCovered.has(m)){
+          nextCovered.add(m);
+          addedAny = true;
+        }
+      }
+      if(addedAny){
+        currentSubset.push(p);
+        search(idx + 1, currentSubset, nextCovered);
+        currentSubset.pop();
+      }
+
+      // Option B: PI weglassen
+      search(idx + 1, currentSubset, currentCovered);
+    }
+
+    search(0, [], new Set());
+    if(bestSubset) minimalPis.push(...bestSubset);
+  }
+
+  return { stages, pis, essentialPis, minimalPis, mintermsToCover };
+}
+
+/* ============================================================
+   EXPR / SOP PARSER (Analog zu kv.html)
+   ============================================================ */
+function tokenize(str){
+  const toks = []; let i = 0;
+  while(i < str.length){
+    const c = str[i];
+    if(/\s/.test(c)){ i++; continue; }
+    if(c === "(" || c === ")"){ toks.push({k: c==="("?"LP":"RP"}); i++; continue; }
+    if(c === "¬" || c === "~" || c === "!"){ toks.push({k:"NOT"}); i++; continue; }
+    if(c === "∧" || c === "&" || c === "*" || c === "·"){ toks.push({k:"AND"}); i++; continue; }
+    if(c === "∨" || c === "|" || c === "+"){ toks.push({k:"OR"}); i++; continue; }
+    if(c === "⊕" || c === "^"){ toks.push({k:"XOR"}); i++; continue; }
+    if(str.startsWith("->", i) || c === "→"){ toks.push({k:"IMP"}); i += (c==="→"?1:2); continue; }
+    if(str.startsWith("<->", i) || c === "↔"){ toks.push({k:"IFF"}); i += (c==="↔"?1:3); continue; }
+    if(/[01]/.test(c) && (i+1>=str.length || !/[a-zA-Z0-9_]/.test(str[i+1]))){ toks.push({k:"CONST", v:+c}); i++; continue; }
+    
+    let m = str.slice(i).match(/^x_?(\d+)/i);
+    if(m){ toks.push({k:"VAR", idx: +m[1]}); i += m[0].length; continue; }
+    
+    const letterIdx = "abcdefg".indexOf(c.toLowerCase());
+    if(letterIdx >= 0){ toks.push({k:"VAR", idx: letterIdx}); i++; continue; }
+    
+    throw new Error(`Unerwartetes Zeichen '${c}' an Position ${i+1}`);
+  }
+  return toks;
+}
+
+function detectN(str){
+  let mx = -1;
+  for(const t of tokenize(str)) if(t.k === "VAR") mx = Math.max(mx, t.idx);
+  return Math.max(mx + 1, 1);
+}
+
+function evalAst(node, a){
+  switch(node.t){
+    case "const": return node.v;
+    case "var": return (a >> node.i) & 1;
+    case "not": return evalAst(node.a, a) ? 0 : 1;
+    case "and": return (evalAst(node.a, a) && evalAst(node.b, a)) ? 1 : 0;
+    case "or":  return (evalAst(node.a, a) || evalAst(node.b, a)) ? 1 : 0;
+    case "xor": return (evalAst(node.a, a) ^ evalAst(node.b, a));
+    case "imp": return (!evalAst(node.a, a) || evalAst(node.b, a)) ? 1 : 0;
+    case "iff": return (evalAst(node.a, a) === evalAst(node.b, a)) ? 1 : 0;
+  }
+  return 0;
+}
+
+function parseExpr(str, n){
+  const t = tokenize(str); let p = 0;
+  const peek = () => t[p], eat = k => { if(!t[p] || t[p].k !== k) throw new Error("Syntaxfehler — Klammern prüfen"); return t[p++]; };
+  const atomStart = () => { const x = peek(); return x && (x.k === "VAR" || x.k === "CONST" || x.k === "LP" || x.k === "NOT"); };
+  
+  function atom(){
+    const x = peek(); if(!x) throw new Error("Ausdruck endet unerwartet");
+    if(x.k === "LP"){ p++; const e = iff(); eat("RP"); return e; }
+    if(x.k === "CONST"){ p++; return {t:"const", v: x.v}; }
+    if(x.k === "VAR"){ if(x.idx >= n) throw new Error("Variable x" + x.idx + " außerhalb des Bereichs (n=" + n + ")"); p++; return {t:"var", i: x.idx}; }
+    throw new Error("Syntaxfehler bei einem Operator");
+  }
+  function notP(){ if(peek() && peek().k === "NOT"){ p++; return {t:"not", a: notP()}; } return atom(); }
+  function andP(){ let l = notP(); while(peek() && (peek().k === "AND" || atomStart())){ if(peek().k === "AND") p++; l = {t:"and", a: l, b: notP()}; } return l; }
+  function xorP(){ let l = andP(); while(peek() && peek().k === "XOR"){ p++; l = {t:"xor", a: l, b: andP()}; } return l; }
+  function orP(){ let l = xorP(); while(peek() && peek().k === "OR"){ p++; l = {t:"or", a: l, b: xorP()}; } return l; }
+  function impP(){ let l = orP(); if(peek() && peek().k === "IMP"){ p++; return {t:"imp", a: l, b: impP()}; } return l; }
+  function iff(){ let l = impP(); while(peek() && peek().k === "IFF"){ p++; l = {t:"iff", a: l, b: impP()}; } return l; }
+  const ast = iff();
+  if(p !== t.length) throw new Error("Syntaxfehler am Ende des Ausdrucks");
+  return ast;
+}
+
+function truthTableFromExpr(str, n){
+  const ast = parseExpr(str, n);
+  const tt = new Uint8Array(1 << n);
+  for(let a = 0; a < tt.length; a++) tt[a] = evalAst(ast, a);
+  return tt;
+}
+
+function sopToExpr(text){
+  const terms = text.split(/\n/).map(s => s.trim()).filter(Boolean);
+  return terms.map(t => "(" + t + ")").join(" | ");
+}
+
+/* ============================================================
+   UI RENDERING & UPDATE
+   ============================================================ */
+let buildTimer = null;
+function scheduleBuild(){ if(buildTimer) clearTimeout(buildTimer); buildTimer = setTimeout(tryBuild, 250); }
+
+function tryBuild(){
+  let n = +$("nvars").value;
+  let ones = [], dcs = [], zeros = [];
+  let src = null;
+
+  try {
+    if(activeTab === "expr"){
+      src = $("exprInput").value;
+      if(!src.trim()){ setStatus("muted", "Gib einen Booleschen Ausdruck ein"); return; }
+      n = Math.max(detectN(src), 1);
+      const tt = truthTableFromExpr(src, n);
+      for(let m = 0; m < (1<<n); m++){ if(tt[m] === 1) ones.push(m); else zeros.push(m); }
+    } else if(activeTab === "sop"){
+      src = sopToExpr($("sopInput").value);
+      if(!src){ setStatus("muted", "Gib Produktterme ein, einen pro Zeile"); return; }
+      n = Math.max(detectN(src), 1);
+      const tt = truthTableFromExpr(src, n);
+      for(let m = 0; m < (1<<n); m++){ if(tt[m] === 1) ones.push(m); else zeros.push(m); }
+    } else {
+      const parseNums = str => str.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean).map(Number);
+      ones = parseNums($("mintermInput").value);
+      dcs = parseNums($("dcInput").value);
+      for(const x of [...ones, ...dcs]){
+        if(isNaN(x) || x < 0 || x >= (1<<n)) throw new Error(`Index ${x} liegt außerhalb 0…${(1<<n)-1}`);
+      }
+      for(let m = 0; m < (1<<n); m++){ if(!ones.includes(m) && !dcs.includes(m)) zeros.push(m); }
+    }
+  } catch(e) {
+    setStatus("bad", "✕ " + e.message);
+    return;
+  }
+
+  if(n >= 2 && n <= 6) $("nvars").value = String(n);
+  state.n = n;
+  state.letters = (src !== null && !/x\s*\d/.test(src) && /[a-g]/i.test(src));
+  state.targetForm = $("targetFormSelect").value;
+  state.showPIs = $("showPIsChk").checked;
+  state.showSolution = $("showSolutionChk").checked;
+
+  // Wenn KNF gewählt ist, gruppieren wir über die 0-Stellen anstelle der 1-Stellen
+  const targetTerms = state.targetForm === "knf" ? zeros : ones;
+  const sol = runQMC(n, targetTerms, dcs);
+  state = { ...state, ...sol };
+  activeStageStep = 0;
+
+  setStatus("ok", `Gültig — ${n} Variable${n>1?"n":""}, ${targetTerms.length} ${state.targetForm==="knf"?"Maxterm(e)":"Minterm(e)"}${dcs.length?", "+dcs.length+" Don’t-Care"+(dcs.length!==1?"s":""):""}`);
+  renderAll();
+}
+
+function toggleShowPIs(){
+  $("showPIsChk").checked = true;
+  state.showPIs = true;
+  tryBuild();
+}
+
+function toggleShowSolution(){
+  $("showSolutionChk").checked = true;
+  state.showSolution = true;
+  if(!$("showPIsChk").checked){
+    $("showPIsChk").checked = true;
+    state.showPIs = true;
+  }
+  tryBuild();
+}
+
+function renderAll(){
+  const { n, letters, targetForm, stages, pis, essentialPis, minimalPis, mintermsToCover, showPIs, showSolution } = state;
+
+  // 1. Primimplikanten links in Card 2 rendern
+  $("piCountBadge").textContent = showPIs ? `${pis.length} PIs` : `Verdeckt`;
+  const piCont = $("piListContainer");
+  if(!showPIs){
+    piCont.innerHTML = `<div style="text-align:center; padding:14px 10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; margin:4px 0;">
+      <div style="font-weight:600; font-size:13px; color:#334155; margin-bottom:8px;">Primimplikanten (PIs) verdeckt.</div>
+      <button onclick="toggleShowPIs()" class="btn-primary" style="padding:6px 12px; font-size:12.5px;">Primimplikanten aufdecken</button>
+    </div>`;
+  } else if(!pis.length){
+    piCont.innerHTML = `<div class="hint" style="margin:0">Keine Primimplikanten für f = ${targetForm==="knf"?"1":"0"} gefunden.</div>`;
+  } else {
+    piCont.innerHTML = pis.map(p => {
+      const lat = targetForm === "knf" ? knfToLatex(p, n, letters) : impToLatex(p, n, letters);
+      const isEss = showSolution && p.isEssential;
+      return `<div class="pi-item ${isEss ? 'essential' : ''}" onmouseover="highlightPiRow('${p.id}')" onmouseout="clearPiRowHighlight()">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pi-badge ${isEss ? 'ess' : ''}">${p.id.replace('_{','').replace('}','')}</span>
+          <span style="font-weight:650;">${renderMath(lat)}</span>
+          <code style="font-size:11px;color:#64748b;background:#f1f5f9;padding:1px 5px;border-radius:4px">${binStr(p.v, p.dc, n)}</code>
+        </div>
+        <span style="font-size:11.5px;color:#475569;">{${p.minterms.join(', ')}}</span>
+      </div>`;
+    }).join("");
+  }
+
+  // 2. Formel, Kosten & Kern-PIs links in Card 3 rendern
+  let fLatex = "";
+  let totalLits = 0;
+  if(!mintermsToCover.length){
+    fLatex = targetForm === "knf" ? "1" : "0";
+  } else if(minimalPis.length === 1 && minimalPis[0].dc === (1<<n)-1){
+    fLatex = targetForm === "knf" ? "0" : "1";
+  } else {
+    minimalPis.forEach(p => { totalLits += countBits(~p.dc & ((1<<n)-1)); });
+    if(targetForm === "dnf"){
+      fLatex = minimalPis.map(p => impToLatex(p, n, letters)).join(" \\vee ");
+    } else {
+      fLatex = minimalPis.map(p => knfToLatex(p, n, letters)).join(" \\wedge ");
+    }
+  }
+
+  const kpiCont = $("kpiListContainer");
+  if(!showSolution){
+    $("capFormula").innerHTML = `<span class="lbl">f =</span> <span style="color:#64748b; font-style:italic">Verdeckt</span>`;
+    $("solTermsContainer").style.display = "none";
+    $("solCostBadge").style.display = "none";
+    kpiCont.innerHTML = `<div style="text-align:center; padding:14px 10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; margin:4px 0;">
+      <div style="font-weight:600; font-size:13px; color:#334155; margin-bottom:8px;">Kern-PIs & Lösung verdeckt.</div>
+      <button onclick="toggleShowSolution()" class="btn-primary" style="padding:6px 12px; font-size:12.5px;">Kern-PIs & Lösung aufdecken</button>
+    </div>`;
+  } else {
+    $("capFormula").innerHTML = `<span class="lbl">f =</span> ` + renderMath(fLatex);
+    $("solTermsContainer").style.display = "block";
+    $("solCostBadge").style.display = "block";
+    $("solTermsContainer").innerHTML = `<div style="padding:8px 12px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; font-size:15px; font-weight:700; color:#0369a1;">f = ${renderMath(fLatex)}</div>`;
+    $("solCostBadge").innerHTML = `✓ Optimale Kosten: <b>${minimalPis.length}</b> Term${minimalPis.length!==1?"e":""}, <b>${totalLits}</b> Literale`;
+    
+    if(!essentialPis.length){
+      kpiCont.innerHTML = `<div class="hint" style="margin:0">Keine exklusiven Kern-Primimplikanten (zyklische Überdeckung via Petrick).</div>`;
+    } else {
+      kpiCont.innerHTML = essentialPis.map(p => {
+        const lat = targetForm === "knf" ? knfToLatex(p, n, letters) : impToLatex(p, n, letters);
+        return `<div style="padding:6px 8px; border-radius:6px; background:#fffbeb; border:1px solid #fde68a; margin-bottom:5px; font-size:12.5px; display:flex; justify-content:space-between; align-items:center;">
+          <div><b style="color:#b45309">★ ${p.id.replace('_{','').replace('}','')}</b> &nbsp;${renderMath(lat)}</div>
+          <span style="font-size:11px; color:#92400e">exklusiv für {${p.minterms.join(', ')}}</span>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  // 3. Primimplikantentafel im Hauptbereich rendern
+  renderPiTable();
+
+  // 4. Stufen im Hauptbereich rendern
+  renderStages();
+  showStageSlideshow(activeStageStep);
+}
+
+/* ============================================================
+   PRIMIMPLIKANTENTAFEL (PI TABLE) MATRIX
+   ============================================================ */
+function renderPiTable(){
+  const { n, letters, targetForm, pis, mintermsToCover, showPIs, showSolution } = state;
+  const wrap = $("pitableWrap");
+
+  if(!showPIs){
+    wrap.innerHTML = `<div style="text-align:center; padding:28px 16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; margin:14px 0;">
+      <div style="font-weight:600; font-size:14px; color:#1e293b; margin-bottom:10px;">Tabelle verdeckt, da Primimplikanten verdeckt sind.</div>
+      <button onclick="toggleShowPIs()" class="btn-primary" style="padding:6px 14px; font-size:12.5px;">Primimplikanten aufdecken</button>
+    </div>`;
+    return;
+  }
+
+  if(!mintermsToCover.length || !pis.length){
+    wrap.innerHTML = `<div style="padding:32px; text-align:center; color:#64748b;">Keine Minterme zu überdecken oder keine Primimplikanten vorhanden.</div>`;
+    return;
+  }
+
+  const covCount = new Map();
+  mintermsToCover.forEach(m => {
+    covCount.set(m, pis.filter(p => p.minterms.includes(m)).length);
+  });
+
+  let html = `<table class="pi-table"><thead><tr>
+    <th style="min-width:140px; text-align:left;">Primimplikant (PI)</th>
+    <th style="min-width:80px;">Binär</th>
+    <th style="min-width:60px;">Kosten</th>`;
+  
+  mintermsToCover.forEach(m => {
+    const isEssCol = showSolution && (covCount.get(m) === 1);
+    html += `<th class="${isEssCol ? 'ess-col' : ''}" title="Minterm m${m} (${m.toString(2).padStart(n,'0')})">
+      ${isEssCol ? '<div style="color:#d97706;font-size:11px;margin-bottom:2px;">★ Kern</div>' : ''}
+      m<sub>${m}</sub><div style="font-size:11px;font-weight:500;color:#64748b;margin-top:2px;">${m.toString(2).padStart(n,'0')}</div>
+    </th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  pis.forEach(p => {
+    const lat = targetForm === "knf" ? knfToLatex(p, n, letters) : impToLatex(p, n, letters);
+    const isEss = showSolution && p.isEssential;
+    const litsCount = countBits(~p.dc & ((1<<n)-1));
+
+    html += `<tr id="row-${p.id}" class="${isEss ? 'ess-row' : ''}">
+      <th>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pi-badge ${isEss ? 'ess' : ''}">${p.id.replace('_{','').replace('}','')}</span>
+          <span>${renderMath(lat)}</span>
+          ${isEss ? '<span style="color:#d97706;font-size:11px;font-weight:700">★ Kern</span>' : ''}
+        </div>
+      </th>
+      <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#475569">${binStr(p.v, p.dc, n)}</code></td>
+      <td><b>${litsCount}</b> <span style="font-size:11px;color:#64748b">Lit.</span></td>`;
+
+    mintermsToCover.forEach(m => {
+      const covers = p.minterms.includes(m);
+      const isEssCol = showSolution && (covCount.get(m) === 1);
+      if(covers){
+        html += `<td class="cov-cell ${isEssCol ? 'ess-mark' : ''}" title="${p.id} abdeckt m${m}">✕</td>`;
+      } else {
+        html += `<td></td>`;
+      }
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+}
+
+function highlightPiRow(id){
+  const tr = $(`row-${id}`);
+  if(tr) tr.style.backgroundColor = "#e0f2fe";
+}
+function clearPiRowHighlight(){
+  document.querySelectorAll("table.pi-table tbody tr").forEach(tr => tr.style.backgroundColor = "");
+}
+
+/* ============================================================
+   STUFEN DER MINTERM-GRUPPIERUNG (SLIDESHOW & PROGRESSIVE REVEAL)
+   ============================================================ */
+function showStageSlideshow(mode){
+  const { stages } = state;
+  activeStageStep = mode;
+
+  const nav = $("stagesNav");
+  if(nav) {
+    nav.querySelectorAll("button.stage-step-btn").forEach(b => b.classList.remove("active"));
+    const btn = $(`btnStage-${mode}`);
+    if(btn) btn.classList.add("active");
+  }
+
+  const grid = $("stagesGrid");
+  if(!grid) return;
+
+  if(mode === "all"){
+    grid.querySelectorAll(".stage-box").forEach(el => el.style.display = "flex");
+  } else {
+    const targetIdx = typeof mode === "number" ? mode : Number(mode);
+    grid.querySelectorAll(".stage-box").forEach((el, idx) => {
+      el.style.display = (idx <= targetIdx) ? "flex" : "none";
+    });
+    setTimeout(() => {
+      const targetEl = $(`stage-box-${targetIdx}`);
+      if(targetEl && grid.scrollTo) {
+        grid.scrollTo({ left: targetEl.offsetLeft, behavior: "smooth" });
+      }
+    }, 20);
+  }
+}
+
+function stepStageSlideshow(delta){
+  const { stages } = state;
+  if(!stages.length) return;
+  let current = (activeStageStep === "all" || activeStageStep === undefined) ? (stages.length - 1) : Number(activeStageStep);
+  let next = current + delta;
+  if(next < 0) next = 0;
+  if(next >= stages.length) next = "all";
+  showStageSlideshow(next);
+}
+
+function renderStages(){
+  const { n, stages, showPIs } = state;
+  const grid = $("stagesGrid");
+  const nav = $("stagesNav");
+  
+  if(!stages.length){
+    grid.innerHTML = `<div style="padding:24px; color:#64748b;">Keine Gruppierungsstufen vorhanden.</div>`;
+    nav.style.display = "none";
+    return;
+  }
+
+  nav.style.display = "flex";
+  let navBtnsHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <span style="font-size:12.5px; font-weight:700; color:#0f172a;">Slideshow:</span>
+    <button onclick="stepStageSlideshow(-1)" class="stages-btn" title="Vorherige Stufe verbergen">Zurück</button>
+    <button onclick="stepStageSlideshow(1)" class="stages-btn" style="background:#2563eb; color:#fff; border-color:#2563eb; font-weight:700;" title="Nächste Stufe nebeneinander einblenden">Nächste Stufe</button>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+    <button id="btnStage-all" class="stage-step-btn" onclick="showStageSlideshow('all')" style="font-weight:700;">Alle Stufen (${stages.length})</button>`;
+  
+  stages.forEach((st, idx) => {
+    navBtnsHtml += `<button id="btnStage-${idx}" class="stage-step-btn" onclick="showStageSlideshow(${idx})">Stufe ${idx}</button>`;
+  });
+  navBtnsHtml += `</div>`;
+  nav.innerHTML = navBtnsHtml;
+
+  grid.innerHTML = stages.map((st, sIdx) => {
+    const weights = [...st.groups.keys()].sort((a,b)=>a-b);
+    let rowsHtml = "";
+    weights.forEach(w => {
+      rowsHtml += `<tr class="group-row"><td colspan="3">Indexklasse ${w} (${w} Einsen)</td></tr>`;
+      st.groups.get(w).forEach(it => {
+        const statusHtml = !showPIs 
+          ? `<span style="color:#94a3b8; font-style:italic; font-size:11.5px;" title="Verdeckt">🔒 ?</span>`
+          : (it.combined 
+            ? `<span class="mark-cov" title="In Stufe ${sIdx+1} verknüpft">✓</span>` 
+            : `<span class="mark-pi" title="Primimplikant">★ PI</span>`);
+        rowsHtml += `<tr>
+          <td style="font-family:Consolas,monospace;font-weight:600;color:#0f172a">${binStr(it.v, it.dc, n)}</td>
+          <td style="color:#64748b;font-size:12px">(${it.minterms.join(", ")})</td>
+          <td style="text-align:right;">${statusHtml}</td>
+        </tr>`;
+      });
+    });
+
+    return `<div class="stage-box" id="stage-box-${sIdx}" style="display:${(sIdx <= activeStageStep) ? 'flex' : 'none'};">
+      <div class="stage-header">
+        <span>Stufe ${sIdx}: ${sIdx===0 ? "Ausgangsterme (0-er Paare)" : sIdx+"-er Paare (" + (1<<sIdx) + "er)"}</span>
+        <span style="font-size:12px;font-weight:600;color:#64748b">${st.items.length} Terme</span>
+      </div>
+      <div class="stage-content">
+        <table class="stage-table">
+          <thead>
+            <tr style="background:#f8fafc;font-weight:700;color:#475569;font-size:12px;">
+              <th>Binär-Muster</th>
+              <th>Minterme</th>
+              <th style="text-align:right;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   LEEREN & BEISPIELE
+   ============================================================ */
+function clearAll(){
+  if(activeTab === "expr") $("exprInput").value = "";
+  else if(activeTab === "sop") $("sopInput").value = "";
+  else { $("mintermInput").value = ""; $("dcInput").value = ""; }
+  tryBuild();
+}
+$("clearBtn").onclick = clearAll;
+$("nvars").onchange = tryBuild;
+$("targetFormSelect").onchange = tryBuild;
+$("showPIsChk").onchange = tryBuild;
+$("showSolutionChk").onchange = tryBuild;
+$("mintermInput").addEventListener("keydown", e => { if(e.key === "Enter") tryBuild(); });
+$("dcInput").addEventListener("keydown", e => { if(e.key === "Enter") tryBuild(); });
+$("applyMt").onclick = tryBuild;
+$("exprInput").addEventListener("input", scheduleBuild);
+$("sopInput").addEventListener("input", scheduleBuild);
+
+const EXAMPLES = {
+  slide: { tab: "mt", n: 4, ones: [0, 4, 5, 6, 7, 8, 9, 13], dcs: [] },
+  petrick: { tab: "mt", n: 4, ones: [0, 2, 5, 6, 7, 8, 10, 12, 13, 14, 15], dcs: [] },
+  bcd: { tab: "mt", n: 4, ones: [5, 6, 7, 8, 9], dcs: [10, 11, 12, 13, 14, 15] },
+  maj: { tab: "expr", n: 3, expr: "(a ∧ b) ∨ (a ∧ c) ∨ (b ∧ c)" },
+  adder: { tab: "expr", n: 3, expr: "(a ∧ b) ∨ (a ∧ c) ∨ (b ∧ c)" },
+  parity4: { tab: "expr", n: 4, expr: "a ⊕ b ⊕ c ⊕ d" }
+};
+
+$("examples").onchange = e => {
+  const ex = EXAMPLES[e.target.value]; e.target.value = "";
+  if(!ex) return;
+  $("nvars").value = String(ex.n);
+  if(ex.tab === "expr"){
+    $("exprInput").value = ex.expr;
+    setTab("expr");
+  } else {
+    $("mintermInput").value = ex.ones.join(", ");
+    $("dcInput").value = ex.dcs.join(", ");
+    setTab("mt");
+  }
+};
+
+window.addEventListener("load", () => {
+  if(window.katex) tryBuild();
+});
+
+tryBuild();
+</script>
+</body>
+</html>

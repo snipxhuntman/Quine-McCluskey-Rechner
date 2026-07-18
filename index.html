@@ -241,6 +241,13 @@
   
   .math-fallback { font-family: "Latin Modern Math", Consolas, monospace; font-style: italic; }
   .math-fallback .ov { text-decoration: overline; }
+  /* smooth animations */
+  @keyframes pop { from { transform: scale(.985); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+  .card { animation: pop .22s ease; }
+  .stage-box { animation: pop .25s ease; }
+  table.pi-table { animation: pop .25s ease; }
+  .pi-item { animation: pop .22s ease; }
+  textarea, input[type=text], select.field { transition: border-color .15s ease, box-shadow .15s ease; }
 </style>
 </head>
 <body>

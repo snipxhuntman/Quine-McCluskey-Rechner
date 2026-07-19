@@ -248,6 +248,30 @@
   table.pi-table { animation: pop .25s ease; }
   .pi-item { animation: pop .22s ease; }
   textarea, input[type=text], select.field { transition: border-color .15s ease, box-shadow .15s ease; }
+
+  /* ── Handy / Tablet ── */
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    body { overflow: auto; overflow-x: hidden; }
+    header { flex-direction: column; align-items: stretch; padding: 10px 14px; gap: 10px; }
+    header h1 { font-size: 15px; }
+    header .right { width: 100%; justify-content: flex-start; gap: 8px; }
+    .ctrl-group { flex-wrap: wrap; height: auto !important; }
+    .ctrl-group .hdr-select { flex: 1; min-width: 0; max-width: 100%; }
+    select.hdr-select { max-width: 100%; }
+    .wrap { flex-direction: column; padding: 10px; gap: 12px; }
+    aside { width: 100%; overflow: visible; padding-right: 0; }
+    .main { flex: none; overflow: visible; }
+    .main-header { padding: 10px 12px; }
+    .formula-box { max-width: 100%; overflow-x: auto; }
+    .content-area { overflow: visible; padding: 12px; }
+    .pitable-container { max-height: 75vh; }
+    .stages-grid { overflow-y: visible; }
+    .stage-box { min-width: 270px; width: 290px; max-height: 70vh; }
+    .row { flex-wrap: wrap; }
+    .row label { width: 100%; }
+    textarea, input[type=text], select { font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -286,11 +310,11 @@
     </select>
     <div class="ctrl-group" style="background:#fff; padding:5px 12px; border-radius:8px; border:1px solid var(--line); display:flex; gap:14px; align-items:center; height:31px;">
       <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600; font-size:12.5px; color:#1e293b; margin:0;" title="Primimplikanten (PIs) in den Stufen und in Card 2 aufdecken">
-        <input type="checkbox" id="showPIsChk" style="cursor:pointer; width:14px; height:14px; margin:0;">
+        <input type="checkbox" id="showPIsChk" checked style="cursor:pointer; width:14px; height:14px; margin:0;">
         <span>Primimplikanten (PIs)</span>
       </label>
       <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600; font-size:12.5px; color:#1e293b; margin:0;" title="Kern-PIs in Tabelle/Card 3 und Minimallösung f aufdecken">
-        <input type="checkbox" id="showSolutionChk" style="cursor:pointer; width:14px; height:14px; margin:0;">
+        <input type="checkbox" id="showSolutionChk" checked style="cursor:pointer; width:14px; height:14px; margin:0;">
         <span>Kern-PIs & Lösung f</span>
       </label>
     </div>
@@ -397,8 +421,8 @@ let state = {
   dcs: [10, 11, 12],
   letters: false,
   targetForm: "dnf",
-  showPIs: false,
-  showSolution: false,
+  showPIs: true,
+  showSolution: true,
   stages: [],
   pis: [],
   essentialPis: [],
